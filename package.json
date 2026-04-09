@@ -13,6 +13,7 @@
   "dependencies": {
     "@discordjs/voice": "^0.16.1",
     "discord.js": "^14.15.3",
+    "discord-interactions": "^3.4.0",
     "play-dl": "^1.10.5",
     "@hookform/resolvers": "^3.9.1",
     "@vercel/analytics": "1.6.1",
