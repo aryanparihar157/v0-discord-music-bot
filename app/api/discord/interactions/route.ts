@@ -7,10 +7,10 @@ import {
 } from 'discord-interactions';
 import { handleSlashCommand } from '@/bot/handlers/slashCommandHandler';
 
-const PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY!;
+const PUBLIC_KEY = process.env.DISCORD_PUBLIC_KEY || '';
 
 if (!PUBLIC_KEY) {
-  console.warn('DISCORD_PUBLIC_KEY not set. Discord interactions will not work.');
+  console.warn('[v0] DISCORD_PUBLIC_KEY not configured - Discord interactions will fail');
 }
 
 export async function POST(request: NextRequest) {
