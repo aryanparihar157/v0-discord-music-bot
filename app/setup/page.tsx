@@ -1,13 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Copy, CheckCircle2 } from 'lucide-react';
+import { Copy, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function DiscordBotSetup() {
   const [copied, setCopied] = useState<string | null>(null);
   const [inviteUrl, setInviteUrl] = useState('');
+  const [registering, setRegistering] = useState(false);
+  const [registerStatus, setRegisterStatus] = useState<string | null>(null);
 
   const clientId = process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID || '';
 
@@ -25,6 +27,26 @@ export default function DiscordBotSetup() {
     navigator.clipboard.writeText(text);
     setCopied(id);
     setTimeout(() => setCopied(null), 2000);
+  };
+
+  const registerCommands = async () => {
+    setRegistering(true);
+    setRegisterStatus(null);
+    try {
+      const response = await fetch('/api/setup/register-commands', {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setRegisterStatus(`✅ Registered ${data.commands.length} commands: ${data.commands.join(', ')}`);
+      } else {
+        setRegisterStatus(`❌ Error: ${data.error}`);
+      }
+    } catch (error) {
+      setRegisterStatus(`❌ Error: ${String(error)}`);
+    } finally {
+      setRegistering(false);
+    }
   };
 
   const steps = [
@@ -107,6 +129,39 @@ export default function DiscordBotSetup() {
             </CardContent>
           </Card>
         )}
+
+        {/* Register Commands Section */}
+        <Card className="mb-8 border-purple-500/20 bg-purple-500/5">
+          <CardHeader>
+            <CardTitle className="text-purple-400">Register Slash Commands</CardTitle>
+            <CardDescription>Register all bot commands with Discord</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button
+              onClick={registerCommands}
+              disabled={registering}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg"
+            >
+              {registering ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Registering Commands...
+                </>
+              ) : (
+                'Register Commands'
+              )}
+            </Button>
+            {registerStatus && (
+              <div className={`p-3 rounded border ${
+                registerStatus.startsWith('✅')
+                  ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                  : 'bg-red-500/10 border-red-500/20 text-red-400'
+              }`}>
+                {registerStatus}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Setup Steps */}
         <div className="space-y-4">
