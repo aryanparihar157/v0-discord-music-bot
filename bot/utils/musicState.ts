@@ -58,9 +58,14 @@ export function getMusicState(guildId: string): MusicState | undefined {
 }
 
 export async function playNextSong(state: MusicState): Promise<void> {
-  if (!state.currentSong) return;
+  if (!state.currentSong) {
+    console.log('[v0] No current song to play');
+    return;
+  }
 
   try {
+    console.log(`[v0] Attempting to play: ${state.currentSong.title} (source: ${state.currentSong.source})`);
+    
     // Get the stream for the song
     const stream = await getSongStream(
       state.currentSong.source,
@@ -69,11 +74,12 @@ export async function playNextSong(state: MusicState): Promise<void> {
     );
 
     if (!stream) {
-      console.warn(`Could not get stream for ${state.currentSong.title}`);
+      console.warn(`[v0] Could not get stream for ${state.currentSong.title}`);
       state.isPlaying = false;
       
       // Skip to next song if available
       if (state.queue.length > 0) {
+        console.log(`[v0] Moving to next song in queue`);
         state.currentSong = state.queue.shift();
         await playNextSong(state);
       }
@@ -81,16 +87,21 @@ export async function playNextSong(state: MusicState): Promise<void> {
     }
 
     // Create audio resource and play
+    console.log(`[v0] Creating audio resource for ${state.currentSong.title}`);
     const resource = createAudioResourceFromStream(stream);
+    
+    console.log(`[v0] Playing resource...`);
     state.player.play(resource);
     state.isPlaying = true;
     state.isPaused = false;
+    console.log(`[v0] ✓ Now playing: ${state.currentSong.title}`);
   } catch (error) {
-    console.error('Error playing song:', error);
+    console.error('[v0] Error playing song:', error);
     state.isPlaying = false;
     
     // Try next song on error
     if (state.queue.length > 0) {
+      console.log(`[v0] Error occurred, skipping to next song`);
       state.currentSong = state.queue.shift();
       await playNextSong(state);
     }

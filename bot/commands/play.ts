@@ -67,24 +67,29 @@ module.exports = {
       // Join voice channel if not already connected
       if (!musicState.voiceChannel) {
         musicState.voiceChannel = voiceChannel;
-        joinVoiceChannel({
+        const connection = joinVoiceChannel({
           channelId: voiceChannel.id,
           guildId: interaction.guild!.id,
           adapterCreator: interaction.guild!.voiceAdapterCreator,
         });
+
+        // Subscribe the connection to the player
+        connection.subscribe(musicState.player);
+        console.log(`[v0] Joined voice channel ${voiceChannel.name} in guild ${interaction.guild!.id}`);
       }
 
       // If nothing is playing, start playing
       if (!musicState.isPlaying && !musicState.currentSong) {
         musicState.currentSong = musicState.queue.shift();
+        console.log(`[v0] Starting playback of: ${musicState.currentSong?.title}`);
         await playNextSong(musicState);
       }
 
-      const queuePosition = musicState.queue.length + 1;
-      const status = !musicState.isPlaying ? '⏸️ Queued' : '▶️ Added to queue';
+      const queuePosition = musicState.queue.length;
+      const status = musicState.isPlaying ? '▶️ Added to queue' : '⏸️ First in queue';
       
       return interaction.editReply(
-        `${status}: **${song.title}** (position: ${queuePosition})`
+        `${status}: **${song.title}** (position: ${queuePosition + 1})`
       );
     } catch (error) {
       console.error('Play command error:', error);

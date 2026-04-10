@@ -6,22 +6,30 @@ import { Readable } from 'stream';
  */
 export async function getYouTubeStream(url: string): Promise<Readable | null> {
   try {
+    console.log(`[v0] Getting YouTube stream for: ${url}`);
+    
     // Try to use play-dl
     try {
       const play = require('play-dl');
       
       if (play && play.stream) {
-        const stream = await play.stream(url);
-        return stream.stream;
+        console.log(`[v0] Using play-dl to stream from YouTube`);
+        const streamInfo = await play.stream(url);
+        
+        if (streamInfo && streamInfo.stream) {
+          console.log(`[v0] ✓ YouTube stream ready`);
+          return streamInfo.stream;
+        }
       }
     } catch (e) {
-      console.warn('play-dl stream not available');
+      console.warn(`[v0] play-dl stream not available:`, e);
     }
 
     // Fallback: return null (bot can't stream this source)
+    console.warn(`[v0] Could not get YouTube stream - falling back`);
     return null;
   } catch (error) {
-    console.error('Error getting YouTube stream:', error);
+    console.error('[v0] Error getting YouTube stream:', error);
     return null;
   }
 }
@@ -101,7 +109,17 @@ export function createAudioResourceFromStream(
   stream: Readable,
   streamType: StreamType = StreamType.Arbitrary
 ): AudioResource {
-  return createAudioResource(stream, { inputType: streamType });
+  console.log(`[v0] Creating audio resource with stream type: ${streamType}`);
+  try {
+    const resource = createAudioResource(stream, { 
+      inputType: streamType,
+      inlineVolume: true,
+    });
+    return resource;
+  } catch (error) {
+    console.error(`[v0] Error creating audio resource:`, error);
+    throw error;
+  }
 }
 
 /**
