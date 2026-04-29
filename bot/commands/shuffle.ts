@@ -16,7 +16,7 @@ module.exports = {
     .setName('shuffle')
     .setDescription('Shuffle the current queue'),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  async run(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     const musicState = getMusicState(interaction.guildId!);
@@ -32,3 +32,4 @@ module.exports = {
     );
   },
 };
+

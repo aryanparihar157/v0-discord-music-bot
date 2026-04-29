@@ -14,7 +14,7 @@ module.exports = {
         .setRequired(true)
     ),
 
-  async execute(interaction: ChatInputCommandInteraction, client: any) {
+  async run(interaction: ChatInputCommandInteraction, client: any) {
     await interaction.deferReply();
 
     const query = interaction.options.getString('query');
@@ -97,3 +97,4 @@ module.exports = {
     }
   },
 };
+

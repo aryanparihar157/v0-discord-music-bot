@@ -5,7 +5,7 @@ module.exports = {
     .setName('help')
     .setDescription('Show all available bot commands'),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  async run(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     const embed = new EmbedBuilder()
@@ -62,3 +62,4 @@ module.exports = {
     return interaction.editReply({ embeds: [embed] });
   },
 };
+

@@ -90,7 +90,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[v0] Registering slash commands...');
 
     const response = await fetch(
       `${DISCORD_API_URL}/applications/${CLIENT_ID}/commands`,
@@ -114,7 +113,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log(`[v0] Successfully registered ${data.length} slash commands`);
 
     return NextResponse.json(
       {

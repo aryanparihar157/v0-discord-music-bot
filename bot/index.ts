@@ -1,6 +1,6 @@
-import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import { readdirSync } from 'fs';
+import { Client, GatewayIntentBits } from 'discord.js';
 import { join } from 'path';
+import { loadCommands } from './utils/commandLoader';
 
 const client = new Client({
   intents: [
@@ -10,26 +10,15 @@ const client = new Client({
   ],
 });
 
-// Store commands
-client.commands = new Collection();
-
 // Load command files
 const commandsPath = join(__dirname, 'commands');
-const commandFiles = readdirSync(commandsPath).filter(file => file.endsWith('.ts') || file.endsWith('.js'));
-
-for (const file of commandFiles) {
-  const filePath = join(commandsPath, file);
-  const command = require(filePath);
-  if ('data' in command && 'execute' in command) {
-    client.commands.set(command.data.name, command);
-  }
-}
+client.commands = loadCommands(commandsPath);
 
 // Store guild music states
 client.musicStates = new Map();
 
 client.once('ready', () => {
-  console.log(`✓ Bot logged in as ${client.user?.tag}`);
+  // Bot logged in successfully
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -43,7 +32,7 @@ client.on('interactionCreate', async (interaction) => {
   }
 
   try {
-    await command.execute(interaction, client);
+    await command.run(interaction, client);
   } catch (error) {
     console.error(error);
     if (interaction.replied || interaction.deferred) {

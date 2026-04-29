@@ -6,7 +6,7 @@ module.exports = {
     .setName('resume')
     .setDescription('Resume the paused song'),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  async run(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     const musicState = getMusicState(interaction.guildId!);
@@ -24,3 +24,4 @@ module.exports = {
     return interaction.editReply('Failed to resume playback.');
   },
 };
+

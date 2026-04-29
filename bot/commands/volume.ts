@@ -14,7 +14,7 @@ module.exports = {
         .setRequired(true)
     ),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  async run(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     const level = interaction.options.getNumber('level')!;
@@ -31,3 +31,4 @@ module.exports = {
     return interaction.editReply(`🔊 Volume set to **${level}%**`);
   },
 };
+

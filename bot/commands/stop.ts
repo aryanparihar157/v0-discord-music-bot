@@ -6,7 +6,7 @@ module.exports = {
     .setName('stop')
     .setDescription('Stop playback and clear the queue'),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  async run(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     const musicState = getMusicState(interaction.guildId!);
@@ -20,3 +20,4 @@ module.exports = {
     return interaction.editReply('⏹️ Stopped playback and cleared the queue.');
   },
 };
+

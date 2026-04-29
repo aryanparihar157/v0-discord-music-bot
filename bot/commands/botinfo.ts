@@ -5,7 +5,7 @@ module.exports = {
     .setName('botinfo')
     .setDescription('Show information about the bot'),
 
-  async execute(interaction: ChatInputCommandInteraction, client: any) {
+  async run(interaction: ChatInputCommandInteraction, client: any) {
     await interaction.deferReply();
 
     const embed = new EmbedBuilder()
@@ -79,3 +79,4 @@ function formatUptime(milliseconds: number): string {
     return `${seconds}s`;
   }
 }
+

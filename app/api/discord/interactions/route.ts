@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
 
     // Handle button interactions
     if (interaction.type === InteractionType.MESSAGE_COMPONENT) {
-      // TODO: Add message component handling (buttons, select menus, etc.)
       return NextResponse.json({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {

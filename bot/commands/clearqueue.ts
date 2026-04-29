@@ -6,7 +6,7 @@ module.exports = {
     .setName('clearqueue')
     .setDescription('Clear all songs from the queue (except current song)'),
 
-  async execute(interaction: ChatInputCommandInteraction) {
+  async run(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     const musicState = getMusicState(interaction.guildId!);
@@ -21,3 +21,4 @@ module.exports = {
     return interaction.editReply(`🗑️ Cleared **${clearedCount}** songs from the queue.`);
   },
 };
+
