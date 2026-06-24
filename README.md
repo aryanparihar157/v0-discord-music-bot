@@ -4,6 +4,14 @@ A powerful, easy-to-deploy Discord music bot built with Next.js, Discord.js, and
 
 Play music from **YouTube**, **Spotify**, **Apple Music**, and more in your Discord server.
 
+## 🔧 Updates & Audio Streaming Repair (June 2026)
+
+We have fully repaired and implemented the audio streaming system:
+- **`yt-dlp` Streaming Integration**: YouTube's frequent updates broke standard `play-dl` and `ytdl-core` stream deciphering (resulting in `TypeError: Invalid URL` errors). We migrated the stream extraction to use `yt-dlp` which is updated daily to bypass YouTube blocks.
+- **Cross-Platform Auto-Downloader**: On startup/first playback, the bot checks if `yt-dlp` is installed globally. If not, it automatically downloads the correct platform-specific binary (Windows, Linux, macOS) into the `./bin` folder.
+- **Pure JS Voice Fallback**: Added `opusscript` and `libsodium-wrappers` to ensure the bot can run on systems (like Windows local development) without Visual Studio C++ compilers or build tools.
+- **Transcoding Support**: Added `ffmpeg-static` to handle decoding of audio streams automatically.
+
 ## 🌟 Features
 
 - ✅ Play songs by name, YouTube links, Spotify URLs, or Apple Music links
@@ -89,7 +97,7 @@ https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=36
 
 - **Framework**: [Next.js 16](https://nextjs.org) with App Router
 - **Discord Library**: [Discord.js 14](https://discord.js.org)
-- **Audio**: [discord.js/voice](https://github.com/discordjs/voice), [play-dl](https://github.com/Androz2091/play-dl)
+- **Audio**: [discord.js/voice](https://github.com/discordjs/voice), [yt-dlp](https://github.com/yt-dlp/yt-dlp) (stream extraction), [play-dl](https://github.com/Androz2091/play-dl) (search fallback), [opusscript](https://github.com/Rapptz/opusscript) (JS Opus fallback), and [ffmpeg-static](https://github.com/eugeneware/ffmpeg-static) (transcoding)
 - **Hosting**: [Vercel](https://vercel.com)
 - **UI**: [shadcn/ui](https://ui.shadcn.com) with [Tailwind CSS](https://tailwindcss.com)
 
@@ -176,8 +184,9 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for instructions on:
 - Check that Interactions Endpoint URL is verified
 
 **Can't hear music?**
-- Current version is text-response only
-- Full audio streaming coming soon!
+- Verify the bot has "Speak" and "Connect" permissions in the voice channel.
+- Ensure the server has a stable internet connection for downloading/streaming.
+- Check the console logs for any errors relating to the `yt-dlp` extractor.
 
 ## 📚 Learn More
 

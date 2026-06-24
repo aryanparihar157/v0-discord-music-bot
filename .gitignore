@@ -17,3 +17,8 @@ node_modules
 .vercel
 
 .env
+
+# Local bin and temporary files
+bin/
+*-player-script.js
+package-lock.json

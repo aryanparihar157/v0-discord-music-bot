@@ -1,3 +1,5 @@
+import { execSync } from 'child_process';
+import { ensureYtDlp } from './streaming';
 import { Song } from './musicState';
 
 interface SearchResult {
@@ -29,7 +31,48 @@ export async function searchMusic(query: string): Promise<SearchResult[]> {
 }
 
 /**
- * YouTube search using play-dl
+ * Search YouTube using yt-dlp as a fallback
+ */
+async function searchYouTubeWithYtDlp(query: string): Promise<SearchResult[]> {
+  try {
+    const ytDlpPath = await ensureYtDlp();
+    console.log(`[v0] Falling back to yt-dlp search for query: "${query}"`);
+    
+    // Run yt-dlp to search for the query and dump JSON
+    const output = execSync(
+      `"${ytDlpPath}" "ytsearch3:${query.replace(/"/g, '\\"')}" --dump-json --flat-playlist`,
+      { encoding: 'utf-8', stdio: ['pipe', 'pipe', 'ignore'] }
+    );
+
+    const lines = output.trim().split('\n');
+    const results: SearchResult[] = [];
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const item = JSON.parse(line);
+        if (item.url || item.id) {
+          results.push({
+            title: item.title || query,
+            url: item.webpage_url || item.url || `https://www.youtube.com/watch?v=${item.id}`,
+            duration: item.duration || undefined,
+            source: 'youtube' as const,
+          });
+        }
+      } catch (e) {
+        // Ignore JSON parse errors for individual lines
+      }
+    }
+
+    return results;
+  } catch (error) {
+    console.error('[v0] yt-dlp search error:', error);
+    return [];
+  }
+}
+
+/**
+ * YouTube search using play-dl with yt-dlp fallback
  */
 async function searchYouTube(query: string): Promise<SearchResult[]> {
   try {
@@ -39,18 +82,26 @@ async function searchYouTube(query: string): Promise<SearchResult[]> {
       
       if (play && play.search) {
         const results = await play.search(query, { limit: 3 });
-        return results.map((video: any) => ({
-          title: video.title || query,
-          url: video.url || `https://www.youtube.com/watch?v=${video.id}`,
-          duration: video.durationInSec,
-          source: 'youtube' as const,
-        }));
+        if (results && results.length > 0) {
+          return results.map((video: any) => ({
+            title: video.title || query,
+            url: video.url || `https://www.youtube.com/watch?v=${video.id}`,
+            duration: video.durationInSec,
+            source: 'youtube' as const,
+          }));
+        }
       }
     } catch (e) {
-      console.warn('play-dl not fully initialized, using fallback');
+      console.warn('[v0] play-dl search not available or failed, falling back to yt-dlp');
     }
     
-    // Fallback: return search result page
+    // Fallback: Use yt-dlp to search
+    const ytDlpResults = await searchYouTubeWithYtDlp(query);
+    if (ytDlpResults.length > 0) {
+      return ytDlpResults;
+    }
+    
+    // Final fallback: return search result page
     return [
       {
         title: `YouTube: ${query}`,
