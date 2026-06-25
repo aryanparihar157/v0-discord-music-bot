@@ -17,12 +17,12 @@ module.exports = {
   async run(interaction: ChatInputCommandInteraction, client: any) {
     await interaction.deferReply();
 
-    const query = interaction.options.getString('query');
-    const member = interaction.guild?.members.cache.get(interaction.user.id);
-    const voiceChannel = member?.voice.channel;
+    const query = interaction.options.getString('query', true);
+    const member = interaction.member;
+    const voiceChannel = (member as any)?.voice?.channel;
 
     // Check if user is in a voice channel
-    if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
+    if (!voiceChannel || (member as any).voice?.channel?.type !== ChannelType.GuildVoice) {
       return interaction.editReply('You must be in a voice channel to use this command!');
     }
 
@@ -70,7 +70,7 @@ module.exports = {
         const connection = joinVoiceChannel({
           channelId: voiceChannel.id,
           guildId: interaction.guild!.id,
-          adapterCreator: interaction.guild!.voiceAdapterCreator,
+          adapterCreator: interaction.guild!.voiceAdapterCreator as any,
         });
 
         // Subscribe the connection to the player

@@ -24,6 +24,7 @@ const rest = new REST().setToken(TOKEN);
       : Routes.applicationCommands(CLIENT_ID);
 
     await rest.put(route, { body: commands });
+    console.log(`Successfully registered ${commands.length} application commands ${GUILD_ID ? `to guild ${GUILD_ID}` : 'globally'}.`);
   } catch (error) {
     console.error(error);
     process.exit(1);

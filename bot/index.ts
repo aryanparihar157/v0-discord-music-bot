@@ -6,25 +6,24 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildVoiceStates,
-    GatewayIntentBits.GuildMembers,
   ],
 });
 
 // Load command files
 const commandsPath = join(__dirname, 'commands');
-client.commands = loadCommands(commandsPath);
+(client as any).commands = loadCommands(commandsPath);
 
 // Store guild music states
-client.musicStates = new Map();
+(client as any).musicStates = new Map();
 
 client.once('ready', () => {
-  // Bot logged in successfully
+  console.log(`[v0] Bot is online! Logged in as ${client.user?.tag}`);
 });
 
 client.on('interactionCreate', async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  const command = client.commands.get(interaction.commandName);
+  const command = (client as any).commands.get(interaction.commandName);
 
   if (!command) {
     console.error(`No command matching ${interaction.commandName} was found.`);
