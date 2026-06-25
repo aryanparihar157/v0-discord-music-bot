@@ -73,6 +73,14 @@ module.exports = {
           adapterCreator: interaction.guild!.voiceAdapterCreator as any,
         });
 
+        connection.on('error', (error) => {
+          console.error('[v0] VoiceConnection error:', error.message, error);
+        });
+
+        connection.on('stateChange', (oldState, newState) => {
+          console.log(`[v0] VoiceConnection state changed from ${oldState.status} to ${newState.status}`);
+        });
+
         // Subscribe the connection to the player
         connection.subscribe(musicState.player);
         console.log(`[v0] Joined voice channel ${voiceChannel.name} in guild ${interaction.guild!.id}`);

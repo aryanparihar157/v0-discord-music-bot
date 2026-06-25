@@ -40,6 +40,14 @@ export function getOrCreateMusicState(guild: Guild): MusicState {
       }
     });
 
+    player.on('error', (error) => {
+      console.error('[v0] AudioPlayer error:', error.message, error);
+    });
+
+    player.on('stateChange', (oldState, newState) => {
+      console.log(`[v0] AudioPlayer state changed from ${oldState.status} to ${newState.status}`);
+    });
+
     musicStates.set(guildId, {
       guildId,
       queue: [],
