@@ -1,6 +1,12 @@
 import { Client, GatewayIntentBits } from 'discord.js';
 import { join } from 'path';
 import { loadCommands } from './utils/commandLoader';
+import ffmpeg from 'ffmpeg-static';
+
+if (ffmpeg) {
+  process.env.FFMPEG_PATH = ffmpeg;
+  console.log(`[v0] Set FFMPEG_PATH to: ${ffmpeg}`);
+}
 
 const client = new Client({
   intents: [
