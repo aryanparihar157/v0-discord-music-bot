@@ -1,66 +1,50 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { getMusicState } from '../utils/musicState';
+import { MusicPlayer } from '../utils/musicPlayer';
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('queue')
-    .setDescription('View the current music queue'),
+    .setDescription('Display the current music queue'),
 
   async run(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
+    const guild = interaction.guild;
+    if (!guild) {
+      return interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
+    }
 
-    const musicState = getMusicState(interaction.guildId!);
+    const player = MusicPlayer.getOrCreate(guild.id);
+    const queue = player.queue;
+    const current = player.currentSong;
 
-    if (!musicState || (musicState.queue.length === 0 && !musicState.currentSong)) {
-      return interaction.editReply('The queue is empty!');
+    if (!current && queue.length === 0) {
+      return interaction.reply('📭 The queue is currently empty.');
     }
 
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle('Music Queue')
-      .setDescription('Current songs in queue');
+      .setTitle(`Music Queue for ${guild.name}`)
+      .setColor('#0099ff');
 
-    // Add current song
-    if (musicState.currentSong) {
-      embed.addFields({
-        name: '▶️ Now Playing',
-        value: `${musicState.currentSong.title}\nAdded by: ${musicState.currentSong.addedBy}`,
-        inline: false,
+    if (current) {
+      embed.addFields({ 
+        name: '▶️ Now Playing', 
+        value: `**${current.title}** (Requested by: *${current.addedBy}*)` 
       });
     }
 
-    // Add queued songs
-    if (musicState.queue.length > 0) {
-      const queueList = musicState.queue
+    if (queue.length > 0) {
+      const queueList = queue
         .slice(0, 10)
-        .map(
-          (song, index) =>
-            `${index + 1}. **${song.title}** (by ${song.addedBy})`
-        )
+        .map((song, i) => `${i + 1}. **${song.title}** (Requested by: *${song.addedBy}*)`)
         .join('\n');
 
-      embed.addFields({
-        name: `📋 Queue (${musicState.queue.length} songs)`,
-        value: queueList,
-        inline: false,
+      embed.addFields({ 
+        name: '⏳ Upcoming Songs', 
+        value: queueList + (queue.length > 10 ? `\n*...and ${queue.length - 10} more songs in queue.*` : '') 
       });
-
-      if (musicState.queue.length > 10) {
-        embed.setFooter({ text: `+${musicState.queue.length - 10} more songs...` });
-      }
+    } else {
+      embed.addFields({ name: '⏳ Upcoming Songs', value: 'No songs in queue.' });
     }
 
-    // Add status info
-    const status = musicState.isPaused ? 'Paused' : musicState.isPlaying ? 'Playing' : 'Stopped';
-    const volume = Math.round(musicState.volume * 100);
-    
-    embed.addFields({
-      name: '📊 Status',
-      value: `Status: ${status}\nVolume: ${volume}%`,
-      inline: false,
-    });
-
-    return interaction.editReply({ embeds: [embed] });
+    return interaction.reply({ embeds: [embed] });
   },
 };
-

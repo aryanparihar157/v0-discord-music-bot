@@ -1,27 +1,24 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import { getMusicState, skipSong } from '../utils/musicState';
+import { MusicPlayer } from '../utils/musicPlayer';
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('skip')
-    .setDescription('Skip the current song'),
+    .setDescription('Skip the current playing song'),
 
   async run(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
-    const musicState = getMusicState(interaction.guildId!);
-
-    if (!musicState || !musicState.currentSong) {
-      return interaction.editReply('Nothing is currently playing!');
+    const guild = interaction.guild;
+    if (!guild) {
+      return interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
     }
 
-    const skipped = skipSong(musicState);
+    const player = MusicPlayer.getOrCreate(guild.id);
+    const skipped = player.skip();
 
     if (skipped) {
-      return interaction.editReply(`⏭️ Skipped: **${skipped.title}**`);
+      return interaction.reply('⏭️ Skipped the current song.');
+    } else {
+      return interaction.reply({ content: 'There is no song playing to skip!', ephemeral: true });
     }
-
-    return interaction.editReply('Failed to skip the song.');
   },
 };
-

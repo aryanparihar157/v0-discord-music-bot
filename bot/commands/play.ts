@@ -1,108 +1,92 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, ChannelType } from 'discord.js';
-import { joinVoiceChannel } from '@discordjs/voice';
-import { getOrCreateMusicState, addToQueue, playNextSong } from '../utils/musicState';
-import { searchMusic, parseMusicUrl } from '../utils/musicSearch';
+import { joinVoiceChannel, VoiceConnectionStatus, entersState } from '@discordjs/voice';
+import { MusicPlayer } from '../utils/musicPlayer';
+import { resolveSong } from '../utils/ytDlp';
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('play')
-    .setDescription('Play a song from a link, Spotify, YouTube, or song name')
+    .setDescription('Search and play a song in your voice channel')
     .addStringOption(option =>
       option
         .setName('query')
-        .setDescription('Song name, YouTube link, Spotify link, or Apple Music link')
+        .setDescription('The song name, YouTube URL, or other audio link')
         .setRequired(true)
     ),
 
-  async run(interaction: ChatInputCommandInteraction, client: any) {
+  async run(interaction: ChatInputCommandInteraction) {
+    const query = interaction.options.getString('query', true);
+    const guild = interaction.guild;
+    const member = interaction.member;
+
+    if (!guild || !member) {
+      return interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
+    }
+
+    const voiceChannel = (member as any).voice?.channel;
+    if (!voiceChannel || voiceChannel.type !== ChannelType.GuildVoice) {
+      return interaction.reply({ content: 'You must be in a voice channel to use this command!', ephemeral: true });
+    }
+
     await interaction.deferReply();
 
-    const query = interaction.options.getString('query', true);
-    const member = interaction.member;
-    const voiceChannel = (member as any)?.voice?.channel;
-
-    // Check if user is in a voice channel
-    if (!voiceChannel || (member as any).voice?.channel?.type !== ChannelType.GuildVoice) {
-      return interaction.editReply('You must be in a voice channel to use this command!');
-    }
-
-    // Check bot permissions
-    if (!voiceChannel.permissionsFor(client.user).has('Connect')) {
-      return interaction.editReply("I don't have permission to join your voice channel!");
-    }
-
     try {
-      // Get or create music state for this guild
-      const musicState = getOrCreateMusicState(interaction.guild!);
-
-      let song = null;
-
-      // Check if it's a URL
-      if (query.startsWith('http')) {
-        song = await parseMusicUrl(query, query);
+      // Resolve the song metadata
+      const resolved = await resolveSong(query);
+      if (!resolved) {
+        return interaction.editReply(`Could not find or resolve any music for: "${query}".`);
       }
 
-      // If not a URL or parsing failed, search for the song
-      if (!song) {
-        const results = await searchMusic(query);
-        if (results.length === 0) {
-          return interaction.editReply(`No results found for "${query}". Try a direct link or search term.`);
-        }
-        song = results[0];
-      }
+      const player = MusicPlayer.getOrCreate(guild.id);
 
-      if (!song) {
-        return interaction.editReply('Failed to process your request. Please try again.');
-      }
-
-      // Add to queue
-      addToQueue(musicState, {
-        title: song.title,
-        url: song.url,
-        source: song.source,
-        duration: song.duration,
-        addedBy: interaction.user.username,
-      });
-
-      // Join voice channel if not already connected
-      if (!musicState.voiceChannel) {
-        musicState.voiceChannel = voiceChannel;
+      // Join the voice channel if not already in one
+      if (!player.connection) {
         const connection = joinVoiceChannel({
           channelId: voiceChannel.id,
-          guildId: interaction.guild!.id,
-          adapterCreator: interaction.guild!.voiceAdapterCreator as any,
+          guildId: guild.id,
+          adapterCreator: guild.voiceAdapterCreator as any,
         });
 
-        connection.on('error', (error) => {
-          console.error('[v0] VoiceConnection error:', error.message, error);
-        });
+        // Wait for connection to be ready (up to 15 seconds)
+        try {
+          await entersState(connection, VoiceConnectionStatus.Ready, 15000);
+          player.setConnection(connection);
+        } catch (err) {
+          console.error('[v0] VoiceConnection join timeout:', err);
+          connection.destroy();
+          return interaction.editReply('Failed to connect to the voice channel in time.');
+        }
 
         connection.on('stateChange', (oldState, newState) => {
           console.log(`[v0] VoiceConnection state changed from ${oldState.status} to ${newState.status}`);
+          if (newState.status === VoiceConnectionStatus.Destroyed) {
+            player.connection = null;
+          }
         });
 
-        // Subscribe the connection to the player
-        connection.subscribe(musicState.player);
-        console.log(`[v0] Joined voice channel ${voiceChannel.name} in guild ${interaction.guild!.id}`);
+        connection.on('error', (error) => {
+          console.error('[v0] VoiceConnection error:', error);
+        });
       }
 
-      // If nothing is playing, start playing
-      if (!musicState.isPlaying && !musicState.currentSong) {
-        musicState.currentSong = musicState.queue.shift();
-        console.log(`[v0] Starting playback of: ${musicState.currentSong?.title}`);
-        await playNextSong(musicState);
-      }
+      // Add to player queue
+      player.addToQueue({
+        title: resolved.title,
+        url: resolved.url,
+        duration: resolved.duration,
+        addedBy: interaction.user.username,
+      });
 
-      const queuePosition = musicState.queue.length;
-      const status = musicState.isPlaying ? '▶️ Added to queue' : '⏸️ First in queue';
-      
+      const isFirst = player.currentSong?.url === resolved.url && player.queue.length === 0;
+      const statusText = isFirst ? '▶️ Now playing' : '⏳ Added to queue';
+      const queuePosition = player.queue.length;
+
       return interaction.editReply(
-        `${status}: **${song.title}** (position: ${queuePosition + 1})`
+        `${statusText}: **${resolved.title}**${queuePosition > 0 ? ` (Position in queue: #${queuePosition})` : ''}`
       );
     } catch (error) {
-      console.error('Play command error:', error);
-      return interaction.editReply('An error occurred while trying to play the song.');
+      console.error('[v0] Play command error:', error);
+      return interaction.editReply('An unexpected error occurred while trying to play the song.');
     }
   },
 };
-

@@ -3,63 +3,25 @@ import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from '
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('help')
-    .setDescription('Show all available bot commands'),
+    .setDescription('List all available music commands'),
 
   async run(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle('Discord Music Bot - Commands')
-      .setDescription('Here are all available commands for the music bot')
+      .setTitle('🎵 Discord Music Bot Help')
+      .setDescription('Here is a list of all available slash commands:')
+      .setColor('#9b59b6')
       .addFields(
-        {
-          name: '▶️ Playback Commands',
-          value:
-            '`/play <query>` - Play a song by name, link, or search\n' +
-            '`/pause` - Pause the current song\n' +
-            '`/resume` - Resume playback\n' +
-            '`/skip` - Skip to the next song\n' +
-            '`/stop` - Stop playback and clear queue',
-          inline: false,
-        },
-        {
-          name: '📋 Queue Commands',
-          value:
-            '`/queue` - View the current queue\n' +
-            '`/nowplaying` - Show currently playing song\n' +
-            '`/clearqueue` - Clear all songs from queue\n' +
-            '`/shuffle` - Randomize the queue order',
-          inline: false,
-        },
-        {
-          name: '🔊 Volume Commands',
-          value:
-            '`/volume <level>` - Set volume (0-200%)',
-          inline: false,
-        },
-        {
-          name: '📚 Info Commands',
-          value:
-            '`/help` - Show this message\n' +
-            '`/botinfo` - Show bot information',
-          inline: false,
-        }
-      )
-      .addFields({
-        name: '💡 Usage Examples',
-        value:
-          '• `/play never gonna give you up` - Search for a song\n' +
-          '• `/play https://www.youtube.com/watch?v=...` - Play from YouTube\n' +
-          '• `/play https://open.spotify.com/track/...` - Play from Spotify\n' +
-          '• `/volume 100` - Set volume to 100%',
-        inline: false,
-      })
-      .setFooter({
-        text: 'Discord Music Bot | Use /help anytime for assistance',
-      });
+        { name: '/play <query>', value: 'Plays a song or adds it to the queue (supports search queries & direct URLs).' },
+        { name: '/skip', value: 'Skips the currently playing song.' },
+        { name: '/stop', value: 'Stops playback, clears the queue, and disconnects the bot from the voice channel.' },
+        { name: '/pause', value: 'Pauses the current audio playback.' },
+        { name: '/resume', value: 'Resumes the paused audio playback.' },
+        { name: '/queue', value: 'Shows the current queue of upcoming songs.' },
+        { name: '/nowplaying', value: 'Shows details of the song that is currently playing.' },
+        { name: '/volume <0-100>', value: 'Adjusts the volume of the bot.' },
+        { name: '/help', value: 'Displays this help message.' }
+      );
 
-    return interaction.editReply({ embeds: [embed] });
+    return interaction.reply({ embeds: [embed] });
   },
 };
-

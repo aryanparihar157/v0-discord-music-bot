@@ -1,56 +1,40 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
-import { getMusicState } from '../utils/musicState';
+import { MusicPlayer } from '../utils/musicPlayer';
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('nowplaying')
-    .setDescription('Show information about the currently playing song'),
+    .setDescription('Display the currently playing song details'),
 
   async run(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
-    const musicState = getMusicState(interaction.guildId!);
-
-    if (!musicState || !musicState.currentSong) {
-      return interaction.editReply('Nothing is currently playing!');
+    const guild = interaction.guild;
+    if (!guild) {
+      return interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
     }
 
-    const song = musicState.currentSong;
+    const player = MusicPlayer.getOrCreate(guild.id);
+    const current = player.currentSong;
+
+    if (!current) {
+      return interaction.reply({ content: 'No song is currently playing!', ephemeral: true });
+    }
+
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle('Now Playing')
+      .setTitle('📻 Now Playing')
+      .setDescription(`**${current.title}**`)
+      .setURL(current.url)
+      .setColor('#00ff00')
       .addFields(
-        {
-          name: '🎵 Song',
-          value: song.title,
-          inline: false,
-        },
-        {
-          name: '📍 Source',
-          value: song.source.toUpperCase(),
-          inline: true,
-        },
-        {
-          name: '👤 Added by',
-          value: song.addedBy,
-          inline: true,
-        }
+        { name: 'Requested By', value: current.addedBy, inline: true }
       );
 
-    if (song.duration) {
-      const minutes = Math.floor(song.duration / 60);
-      const seconds = song.duration % 60;
-      embed.addFields({
-        name: '⏱️ Duration',
-        value: `${minutes}:${seconds.toString().padStart(2, '0')}`,
-        inline: true,
-      });
+    if (current.duration) {
+      const minutes = Math.floor(current.duration / 60);
+      const seconds = current.duration % 60;
+      const formattedDuration = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      embed.addFields({ name: 'Duration', value: formattedDuration, inline: true });
     }
 
-    const status = musicState.isPaused ? 'Paused' : 'Playing';
-    embed.setFooter({ text: `Status: ${status} | Queue: ${musicState.queue.length} songs` });
-
-    return interaction.editReply({ embeds: [embed] });
+    return interaction.reply({ embeds: [embed] });
   },
 };
-

@@ -1,23 +1,20 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import { getMusicState, stopPlayback } from '../utils/musicState';
+import { MusicPlayer } from '../utils/musicPlayer';
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('stop')
-    .setDescription('Stop playback and clear the queue'),
+    .setDescription('Stop playing music, clear the queue, and disconnect the bot'),
 
   async run(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
-    const musicState = getMusicState(interaction.guildId!);
-
-    if (!musicState || (!musicState.isPlaying && musicState.queue.length === 0)) {
-      return interaction.editReply('Nothing is currently playing!');
+    const guild = interaction.guild;
+    if (!guild) {
+      return interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
     }
 
-    stopPlayback(musicState);
+    const player = MusicPlayer.getOrCreate(guild.id);
+    player.stop();
 
-    return interaction.editReply('⏹️ Stopped playback and cleared the queue.');
+    return interaction.reply('⏹️ Music playback stopped, queue cleared, and disconnected from voice channel.');
   },
 };
-

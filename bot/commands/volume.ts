@@ -1,34 +1,37 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import { getMusicState, setVolume } from '../utils/musicState';
+import { MusicPlayer } from '../utils/musicPlayer';
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('volume')
-    .setDescription('Set the playback volume')
-    .addNumberOption(option =>
+    .setDescription('Set or view the current bot volume')
+    .addIntegerOption(option =>
       option
-        .setName('level')
-        .setDescription('Volume level (0-200%)')
+        .setName('percentage')
+        .setDescription('Volume level from 0 to 100')
+        .setRequired(false)
         .setMinValue(0)
-        .setMaxValue(200)
-        .setRequired(true)
+        .setMaxValue(100)
     ),
 
   async run(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
-    const level = interaction.options.getNumber('level')!;
-    const volumeValue = level / 100;
-
-    const musicState = getMusicState(interaction.guildId!);
-
-    if (!musicState) {
-      return interaction.editReply('No music is loaded for this server.');
+    const guild = interaction.guild;
+    if (!guild) {
+      return interaction.reply({ content: 'This command can only be used in a server!', ephemeral: true });
     }
 
-    setVolume(musicState, volumeValue);
+    const player = MusicPlayer.getOrCreate(guild.id);
+    const percentage = interaction.options.getInteger('percentage');
 
-    return interaction.editReply(`🔊 Volume set to **${level}%**`);
+    if (percentage === null || percentage === undefined) {
+      const currentPercent = Math.round(player.volume * 100);
+      return interaction.reply(`🔊 The current volume is **${currentPercent}%**.`);
+    }
+
+    // Convert percentage (0-100) to volume float (0.0-1.0 or up to 2.0)
+    const newVolume = percentage / 100;
+    player.setVolume(newVolume);
+
+    return interaction.reply(`🔊 Volume set to **${percentage}%**.`);
   },
 };
-

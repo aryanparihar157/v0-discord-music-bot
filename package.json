@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "start": "node run-bot.js",
-    "deploy-commands": "ts-node bot/deploy-commands.ts",
     "test": "jest"
   },
   "dependencies": {
